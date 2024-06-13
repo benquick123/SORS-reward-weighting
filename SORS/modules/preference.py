@@ -116,7 +116,7 @@ class PreferenceDataset(object):
 
         def _load(idxes):
             for idx in idxes:
-                yield (self.trajs[idx].states,self.trajs[idx].actions,self.trajs[idx].rewards,self.trajs[idx].dones)
+                yield self.trajs[idx].states,self.trajs[idx].actions,self.trajs[idx].rewards,self.trajs[idx].dones
 
         in_memory_trajs = [list(chunks) for chunks in chunk(np.random.permutation(len(self.trajs)),self.max_per_file_num)]
 
@@ -173,8 +173,7 @@ class PreferenceDataset(object):
         dataset = trajs.apply(tf.data.experimental.dense_to_ragged_batch(2,drop_remainder=True))
         dataset = dataset.map(_build)
         dataset = dataset.repeat() # repeat indefinietly
-        dataset = dataset.apply(
-            tf.data.experimental.dense_to_ragged_batch(batch_size))
+        dataset = dataset.apply(tf.data.experimental.dense_to_ragged_batch(batch_size))
         dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
         return dataset
@@ -218,12 +217,11 @@ class PreferenceDatasetEnsemble(object):
         self.dataset.add_traj(new_traj)
 
     def batch(self,batch_size):
-        def _unzip(a,b,y):
+        def _unzip(a, b, y):
             return tuple((a[i],b[i],y[i]) for i in range(self.num_ensembles))
 
         dataset = self.dataset.batch(batch_size)
-        dataset = dataset.apply(
-            tf.data.experimental.dense_to_ragged_batch(self.num_ensembles))
+        dataset = dataset.apply(tf.data.experimental.dense_to_ragged_batch(self.num_ensembles))
         dataset = dataset.map(_unzip)
 
         return dataset
@@ -250,7 +248,8 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import gym
 
-    from modules import env_utils
+    import env_utils
+    from reward import RewardV2Ensemble
 
     env = gym.make('Hopper-v2')
     ob_dim = 11
@@ -260,7 +259,7 @@ if __name__ == "__main__":
     config = f"""
     ob_dim = {ob_dim}
     ac_dim = {ac_dim}
-"""
+    """
 
     gin.parse_config_files_and_bindings([], config)
 
@@ -278,5 +277,5 @@ if __name__ == "__main__":
             #it = iter(D.batch_naive_v2(batch_size))
 
             for _ in range(1000):
-                (A,B,l) = next(it)
-                tqdm.write(f'{A[1].shape}, {B[1].shape}, {l}')
+                (A,B,l) = next(it)[0]
+                tqdm.write(f'{A.shape}, {B.shape}, {l}')

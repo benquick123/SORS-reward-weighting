@@ -1,6 +1,19 @@
 import gin
 import gym
 
+
+class MultiRewardWrapperEnv(gym.Wrapper):
+    
+    def __init__(self, env):
+        super().__init__(env)
+        
+    def step(self, action):
+        observation, reward, done, info = super().step(action)
+        reward = self.get_reward(reward)
+        
+        return observation, reward, done, info
+
+
 @gin.configurable(module=__name__)
 class DelayedRewardEnv(gym.Wrapper):
     def __init__(

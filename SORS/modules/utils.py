@@ -43,6 +43,9 @@ def setup_logger(log_dir,args):
                     if value.ndim == 3:
                         value = value[None]
                     tf.summary.image(tag, value, step=it, max_outputs=3)
+                elif record.msg == "graph":
+                    tag, it = record.args
+                    tf.summary.trace_export(name=tag, step=it) # , graph=graph)
                 else:
                     summary_str, it = record.args
 
